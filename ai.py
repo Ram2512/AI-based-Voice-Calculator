@@ -1,30 +1,78 @@
-# Import necessary libraries
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from bs4 import BeautifulSoup
+from tkinter import Tk, Label, Frame, Entry, FLAT, Button, PhotoImage
+import speech_recognition as sr
+import pyttsx3
+import operator
+from PIL import ImageTk, Image, ImageOps
+
+root = Tk()
+root.title("Calculator")
+root.maxsize(400,360)
+root.geometry("400x360")
+
+image=Image.open("bgx1.png")
+# Resize the image using resize() method
+resize_image = image.resize((750,420))
+img = ImageTk.PhotoImage(resize_image)
+# # Set background image
+
+label6 = Label(image=img)
+label6.image = img
+label6.pack()
+
+mic_img = Image.open("micx.png")
+photo = ImageTk.PhotoImage(mic_img)
+mic_img_label = Label(image=photo, bg='#040405')
+mic_img_label.image = photo
+mic_img_label.place(x=173, y=200)
+
+#for mic access
+r = sr.Recognizer()
+my_mic_device = sr.Microphone(device_index=1)
+
+# Adjust the threshold level
+with my_mic_device as source:
+    r.adjust_for_ambient_noise(source, duration=0.5)
+    r.energy_threshold = 1000
+
+engine = pyttsx3.init()
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[1].id)  # for voice
 
 
-# Use Chrome as an example, make sure you have ChromeDriver installed
-driver = webdriver.Chrome()
+def oper_type(op):
+    return {
+        '+': operator.add,
+        '-': operator.sub,
+        'x': operator.mul,
+        '*': operator.mul,
+        '/': operator.__truediv__,
+        'Mod': operator.mod,
+        'mod': operator.mod,
+        '^' : operator.pow,
+        'power': operator.pow,
+    }[op]
 
-# Define the URL of the page you want to visit
-url = "https://leetcode.com"
 
-# Use Selenium to navigate to the desired webpage
-driver.get(url)
+def expr_fxn(op1, oper, op2):
+    op1, op2 = int(op1), int(op2)
+    return oper_type(oper)(op1, op2)
 
-# Wait for some time to ensure the page is fully loaded (you can adjust the time as needed)
-# Wait for 10 seconds (you can change the wait time)
-driver.implicitly_wait(10)
 
-# Get the page source using Selenium
-page_source = driver.page_source
+def calculate(event=None):
+    with my_mic_device as source:
+        print("Say What you want to calculate....")
+        audio = r.listen(source)
 
-# Parse the page source using BeautifulSoup
-soup = BeautifulSoup(page_source, "html.parser")
+    my_string = r.recognize_google(audio)
+    print(my_string)
 
-# Now you can work with the parsed HTML using BeautifulSoup
-# For example, you can extract elements or perform further scraping operations
+    result = expr_fxn(*(my_string.split()))
+    print(result)
 
-# Don't forget to close the WebDriver when you're done
-driver.quit()
+    engine.say("The result is " + str(result))
+    engine.runAndWait()
+
+
+mic_img_label.bind('<Button-1>', calculate)
+
+root.mainloop()
